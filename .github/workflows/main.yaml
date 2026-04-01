@@ -32,8 +32,8 @@ jobs:
           export RESULT_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/result-app:${{ env.IMAGE_TAG }}
           export WORKER_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/worker-app:${{ env.IMAGE_TAG }}
           
-          docker-compose build
-          docker-compose push
+          docker compose build
+          docker compose push
 
   deploy:
     name: Deploy to EC2 via SSH
@@ -63,6 +63,6 @@ jobs:
             export WORKER_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/worker-app:latest
 
             # 4. Pull and Restart
-            docker-compose pull
-            docker-compose up -d --remove-orphans
+            docker compose pull
+            docker compose up -d --remove-orphans
             docker image prune -f
