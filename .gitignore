@@ -4,3 +4,8 @@ bin/
 obj/
 .vs/
 node_modules/
+.github/workflows/call-docker-build-vote.yaml
+.github/workflows/call-docker-build-result.yaml
+.github/workflows/call-docker-build-worker.yaml
+k8s-specifications
+
