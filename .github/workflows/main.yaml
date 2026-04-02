@@ -5,13 +5,14 @@ on:
     branches:
       - main
   workflow_dispatch:
+permissions:
+            id-token: write
+            contents: read
 
 jobs:
   build:
     name: Build Docker Image & Push to AWS ECR
     runs-on: ubuntu-latest
-    env:
-      IMAGE_TAG: latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,50 +20,49 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
+          role-to-assume: arn:aws:iam::536322508049:role/GithubACtions-IAM-role
+          aws-region: us-east-1
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and Push with Docker Compose
+        env:
+           IMAGE_TAG: latest
+           ECR_REGISTRY: 536322508049.dkr.ecr.us-east-1.amazonaws.com
         run: |
-          export VOTE_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/vote-app:${{ env.IMAGE_TAG }}
-          export RESULT_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/result-app:${{ env.IMAGE_TAG }}
-          export WORKER_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/worker-app:${{ env.IMAGE_TAG }}
-          
+          export VOTE_IMAGE=$ECR_REGISTRY/vote-app:$IMAGE_TAG
+          export RESULT_IMAGE=$ECR_REGISTRY/result-app:$IMAGE_TAG
+          export WORKER_IMAGE=$ECR_REGISTRY/worker-app:$IMAGE_TAG
+                      
           docker compose build
           docker compose push
-
   deploy:
-    name: Deploy to EC2 via SSH
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Executing remote ssh commands using password
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: IMAGE_TAG,AWS_ECR_REGISTRY
-          script: |
-            # 1. Login to ECR on the EC2 instance
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
-            
-            # 2. Move to the project folder (Update this path to where your code is on EC2)
-            cd ~/Pritam-example-voting-app || mkdir -p ~/Pritam-example-voting-app && cd ~/Pritam-example-voting-app
-            
-            # 3. Define variables
-            export VOTE_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/vote-app:latest
-            export RESULT_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/result-app:latest
-            export WORKER_IMAGE=${{ secrets.AWS_ECR_REGISTRY }}/worker-app:latest
+          role-to-assume: arn:aws:iam::536322508049:role/GithubACtions-IAM-role
+          aws-region: us-east-1
 
-            # 4. Pull and Restart
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker image prune -f
+      - name: Deploy using SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "i-07f760f03e95e8e15" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy voting app" \
+            --parameters commands='[
+              "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 536322508049.dkr.ecr.us-east-1.amazonaws.com",
+              
+              "cd ~/Pritam-example-voting-app || mkdir -p ~/Pritam-example-voting-app && cd ~/Pritam-example-voting-app",
+              
+              "export VOTE_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/vote-app:latest",
+              "export RESULT_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/result-app:latest",
+              "export WORKER_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/worker-app:latest",
+              
+              "docker compose pull",
+              "docker compose up -d --remove-orphans",
+              "docker image prune -f"
+            ]' \
+            --region us-east-1
