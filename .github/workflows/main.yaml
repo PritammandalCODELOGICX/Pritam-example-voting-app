@@ -6,9 +6,14 @@ on:
       - main
   workflow_dispatch:
 permissions:
+<<<<<<< HEAD
             id-token: write
             contents: read
 
+=======
+  id-token: write
+  contents: read
+>>>>>>> e586f6840bb07c713c9e066397773575694e1e0d
 jobs:
   build:
     name: Build Docker Image & Push to AWS ECR
@@ -21,7 +26,12 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::536322508049:role/GithubACtions-IAM-role
+<<<<<<< HEAD
           aws-region: us-east-1
+=======
+          aws-region: ${{ secrets.AWS_REGION }}
+
+>>>>>>> e586f6840bb07c713c9e066397773575694e1e0d
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
@@ -46,6 +56,7 @@ jobs:
           role-to-assume: arn:aws:iam::536322508049:role/GithubACtions-IAM-role
           aws-region: us-east-1
 
+<<<<<<< HEAD
       - name: Deploy using SSM
         run: |
           aws ssm send-command \
@@ -66,3 +77,9 @@ jobs:
               "docker image prune -f"
             ]' \
             --region us-east-1
+=======
+            # 4. Pull and Restart
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+>>>>>>> e586f6840bb07c713c9e066397773575694e1e0d
