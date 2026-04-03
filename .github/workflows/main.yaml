@@ -19,7 +19,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::536322508049:role/GithubACtions-IAM-role
+          role-to-assume: arn:aws:iam::536322508049:role/SSM-IAM-ROLE
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
@@ -43,7 +43,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::536322508049:role/GithubACtions-IAM-role
+          role-to-assume: arn:aws:iam::536322508049:role/SSM-IAM-ROLE
           aws-region: us-east-1
 
       - name: Deploy using SSM
