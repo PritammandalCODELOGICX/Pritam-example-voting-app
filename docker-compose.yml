@@ -1,5 +1,5 @@
 # version is now using "compose spec"
-# v2 and v3 are now combined!
+# v2 and v3 are combined!
 # docker-compose v1.27+ required
 
 services:
