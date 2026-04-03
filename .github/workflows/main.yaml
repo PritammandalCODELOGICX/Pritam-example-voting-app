@@ -69,7 +69,7 @@ jobs:
               "docker image prune -f"
             ]' \
             --region us-east-1
-            # 4. Pull and Restart
+            # 4. Pull and then restart
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
