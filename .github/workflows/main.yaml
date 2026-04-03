@@ -55,7 +55,10 @@ jobs:
             --parameters commands='[
               "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 536322508049.dkr.ecr.us-east-1.amazonaws.com",
               
-              "cd ~/Pritam-example-voting-app || mkdir -p ~/Pritam-example-voting-app && cd ~/Pritam-example-voting-app",
+              "cd ~",
+               "if [ ! -d \"Pritam-example-voting-app\" ]; then git clone https://github.com/PritammandalCODELOGICX/Pritam-example-voting-app.git; fi",
+               "cd Pritam-example-voting-app",
+               "git pull origin main",
               
               "export VOTE_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/vote-app:latest",
               "export RESULT_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/result-app:latest",
