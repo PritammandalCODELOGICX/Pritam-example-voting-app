@@ -5,13 +5,16 @@ on:
     branches:
       - main
   workflow_dispatch:
+
 permissions:
-            id-token: write
-            contents: read
+  id-token: write
+  contents: read
+
 jobs:
   build:
     name: Build Docker Image & Push to AWS ECR
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -27,18 +30,20 @@ jobs:
 
       - name: Build and Push with Docker Compose
         env:
-           IMAGE_TAG: latest
-           ECR_REGISTRY: 536322508049.dkr.ecr.us-east-1.amazonaws.com
+          IMAGE_TAG: latest
+          ECR_REGISTRY: 536322508049.dkr.ecr.us-east-1.amazonaws.com
         run: |
           export VOTE_IMAGE=$ECR_REGISTRY/vote-app:$IMAGE_TAG
           export RESULT_IMAGE=$ECR_REGISTRY/result-app:$IMAGE_TAG
           export WORKER_IMAGE=$ECR_REGISTRY/worker-app:$IMAGE_TAG
-                      
+
           docker compose build
           docker compose push
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -52,25 +57,23 @@ jobs:
             --instance-ids "i-07f760f03e95e8e15" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy voting app" \
-            --parameters commands='[
+            --parameters 'commands=[
               "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 536322508049.dkr.ecr.us-east-1.amazonaws.com",
-              
+
               "cd ~",
-               "if [ ! -d \"Pritam-example-voting-app\" ]; then git clone https://github.com/PritammandalCODELOGICX/Pritam-example-voting-app.git; fi",
-               "cd Pritam-example-voting-app",
-               "git pull origin main",
-              
+              "if [ ! -d \"Pritam-example-voting-app\" ]; then git clone https://github.com/PritammandalCODELOGICX/Pritam-example-voting-app.git; fi",
+              "cd Pritam-example-voting-app",
+              "git pull origin main",
+
+              "echo ==== DEBUG ==== ",
+              "pwd",
+              "ls -l",
+
               "export VOTE_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/vote-app:latest",
               "export RESULT_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/result-app:latest",
               "export WORKER_IMAGE=536322508049.dkr.ecr.us-east-1.amazonaws.com/worker-app:latest",
-              
-              "docker compose pull",
+
               "docker compose up -d --remove-orphans",
               "docker image prune -f"
             ]' \
             --region us-east-1
-            # 4. Pull and then restart
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker image prune -f
-
